@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="id" id="html-root">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CustomerLens</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fce4ec;
+    --surface: #fff0f4;
+    --surface2: #fde8ef;
+    --border: #f8bbd0;
+    --text: #3b1a26;
+    --muted: #a0627a;
+    --accent: #e91e8c;
+    --pos: #d81b60;
+    --pos-bg: #fce4ec;
+    --neg: #c62828;
+    --neg-bg: #ffeaea;
+    --neu: #e65100;
+    --neu-bg: #fff3e0;
+    --purple: #ad1457;
+    --purple-bg: #fce4ec;
+    --radius: 10px;
+    --shadow: 0 1px 6px rgba(233,30,140,0.10);
+    --grad-start: #f48fb1;
+    --grad-end: #ce93d8;
+  }
+
+  /* ── DARK MODE ── */
+  html.dark {
+    --bg: #1a0a10;
+    --surface: #26101a;
+    --surface2: #311520;
+    --border: #5c2a3a;
+    --text: #fce4ec;
+    --muted: #f48fb1;
+    --shadow: 0 1px 4px rgba(0,0,0,0.5);
+    --pos-bg: #1b0d14;
+    --neg-bg: #2a0a0a;
+    --neu-bg: #2a1500;
+    --purple-bg: #1e0a18;
+  }
+  html.dark .upload-card.drag-over { background: #2a0d1a; }
+  html.dark .cs-config-bar { background: #2a0d1a; border-color: #ad1457; }
+  html.dark .cs-config-title { color: #f48fb1; }
+  html.dark .toast { background: #26101a; }
+  html.dark .toast-msg { color: #f48fb1; }
+  html.dark .table-search { background: var(--surface2); color: var(--text); }
+  html.dark .cs-input { background: var(--surface2); color: var(--text); }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    height: 58px;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #f48fb1, #ce93d8);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(244,143,177,0.4);
+  }
+  .header-logo svg { width: 20px; height: 20px; fill: #fff; }
+
+  /* Gradient brand name */
+  .header-title {
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(90deg, #e91e8c, #ce93d8, #f06292);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.3px;
+  }
+  .header-sub { font-size: 12px; color: var(--muted); }
+
+  /* Dark mode toggle */
+  .dark-toggle {
+    margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--text); display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .dark-toggle:hover { border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1160px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── UPLOAD SECTION ── */
+  .upload-card {
+    background: var(--surface);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 32px;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .upload-card.drag-over {
+    border-color: var(--accent);
+    background: #eff6ff;
+  }
+  .upload-card input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { width: 56px; height: 56px; background: var(--surface2); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .upload-icon svg { width: 28px; height: 28px; stroke: var(--accent); }
+  .upload-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .upload-hint { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .upload-btn {
+    display: inline-block;
+    background: linear-gradient(90deg, #e91e8c, #ce93d8);
+    color: #fff;
+    padding: 9px 22px; border-radius: 7px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; pointer-events: none;
+    box-shadow: 0 2px 8px rgba(233,30,140,0.25);
+  }
+  .upload-formats { margin-top: 12px; font-size: 11px; color: var(--muted); }
+
+  /* sample data btn */
+  .sample-btn {
+    margin-top: 14px; display: inline-block;
+    background: var(--surface2); color: var(--accent); border: 1px solid var(--border);
+    padding: 7px 18px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    cursor: pointer; position: relative; z-index: 2;
+  }
+  .sample-btn:hover { background: var(--border); }
+
+  /* ── COLUMN FORMAT GUIDE ── */
+  .format-guide {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 18px; margin-top: 18px;
+    font-size: 12px; color: var(--muted); text-align: left;
+  }
+  .format-guide strong { color: var(--text); }
+  .format-guide code {
+    background: var(--border); padding: 1px 5px; border-radius: 4px; font-size: 11px;
+  }
+
+  /* ── PROGRESS ── */
+  #progress-wrap {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 24px 28px; text-align: center; box-shadow: var(--shadow); margin-top: 24px;
+    display: none;
+  }
+  .progress-bar-track {
+    height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; margin: 16px 0 10px;
+  }
+  .progress-bar-fill {
+    height: 100%; background: linear-gradient(90deg, #f48fb1, #e91e8c, #ce93d8);
+    border-radius: 99px; width: 0%; transition: width 0.3s;
+  }
+  .progress-label { font-size: 12px; color: var(--muted); }
+
+  /* ── DASHBOARD ── */
+  #dashboard { display: none; margin-top: 28px; }
+
+  /* file info bar */
+  .file-bar {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  }
+  .file-bar svg { width: 20px; height: 20px; stroke: var(--accent); flex-shrink: 0; }
+  .file-bar-name { font-weight: 600; font-size: 14px; }
+  .file-bar-meta { font-size: 12px; color: var(--muted); }
+  .file-bar-reset {
+    margin-left: auto; background: transparent; border: 1px solid var(--border);
+    padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--muted);
+  }
+  .file-bar-reset:hover { border-color: var(--neg); color: var(--neg); }
+
+  /* KPI cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 760px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 18px 20px;
+  }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 30px; font-weight: 800; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi-pos .kpi-value {
+    background: linear-gradient(90deg, #e91e8c, #f06292);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .kpi-neg .kpi-value { color: var(--neg); }
+  .kpi-neu .kpi-value { color: var(--neu); }
+  .kpi-total .kpi-value {
+    background: linear-gradient(90deg, #e91e8c, #ce93d8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  /* charts row */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 720px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px;
+  }
+  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+
+  /* SVG charts */
+  .chart-svg { width: 100%; display: block; }
+
+  /* themes grid */
+  .themes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 720px) { .themes-grid { grid-template-columns: 1fr; } }
+
+  /* theme bars */
+  .theme-bar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .theme-bar-label { width: 110px; font-size: 12px; color: var(--text); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .theme-bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .theme-bar-fill { height: 100%; border-radius: 99px; background: var(--accent); }
+  .theme-bar-count { width: 30px; text-align: right; font-size: 12px; color: var(--muted); }
+
+  /* insights */
+  .insights-card {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; margin-bottom: 20px;
+  }
+  .insights-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .insights-title span { font-size: 16px; }
+  .insight-item {
+    display: flex; gap: 12px; padding: 12px 14px; border-radius: 8px;
+    margin-bottom: 9px; align-items: flex-start;
+  }
+  .insight-item.urgent { background: var(--neg-bg); border-left: 3px solid var(--neg); }
+  .insight-item.positive { background: var(--pos-bg); border-left: 3px solid var(--pos); }
+  .insight-item.neutral { background: var(--neu-bg); border-left: 3px solid var(--neu); }
+  .insight-item.info { background: var(--purple-bg); border-left: 3px solid var(--purple); }
+  .insight-icon { font-size: 18px; flex-shrink: 0; line-height: 1.4; }
+  .insight-text { font-size: 13px; line-height: 1.5; }
+  .insight-text strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+  /* word cloud */
+  .word-cloud { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0; }
+  .word-tag {
+    padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  }
+
+  /* feedback table */
+  .table-card {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; margin-bottom: 20px; overflow: hidden;
+  }
+  .table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .table-search {
+    border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px;
+    font-size: 13px; width: 240px; outline: none;
+    font-family: inherit;
+  }
+  .table-search:focus { border-color: var(--accent); }
+  .filter-pills { display: flex; gap: 6px; }
+  .filter-pill {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border); cursor: pointer; background: var(--surface2);
+    color: var(--muted);
+  }
+  .filter-pill.active-all { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .filter-pill.active-pos { background: var(--pos-bg); color: var(--pos); border-color: var(--pos); }
+  .filter-pill.active-neg { background: var(--neg-bg); color: var(--neg); border-color: var(--neg); }
+  .filter-pill.active-neu { background: var(--neu-bg); color: var(--neu); border-color: var(--neu); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--muted); padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-pos { background: var(--pos-bg); color: var(--pos); }
+  .badge-neg { background: var(--neg-bg); color: var(--neg); }
+  .badge-neu { background: var(--neu-bg); color: var(--neu); }
+  .score-bar { display: flex; align-items: center; gap: 6px; }
+  .score-mini { width: 50px; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .score-mini-fill { height: 100%; border-radius: 99px; }
+  .text-cell { max-width: 280px; }
+  .theme-chip {
+    display: inline-block; background: var(--purple-bg); color: var(--purple);
+    font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px; margin-right: 3px; margin-top: 2px;
+  }
+
+  /* pagination */
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 14px; }
+  .page-btn {
+    padding: 5px 11px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 12px; cursor: pointer; background: var(--surface2);
+  }
+  .page-btn:hover, .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .page-info { font-size: 12px; color: var(--muted); }
+
+  /* empty state */
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* footer */
+  .footer {
+    text-align: center; padding: 24px 0 28px;
+    font-size: 11px; color: var(--muted); border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+
+  /* ── NPS GAUGE ── */
+  .nps-gauge-wrap { text-align: center; padding: 8px 0; }
+  .nps-value { font-size: 40px; font-weight: 900; line-height: 1; }
+  .nps-value.great { color: var(--pos); }
+  .nps-value.ok { color: var(--neu); }
+  .nps-value.poor { color: var(--neg); }
+  .nps-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
+  .nps-bar-wrap { margin: 10px 0 6px; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; position: relative; }
+  .nps-bar-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+  .nps-desc { font-size: 11px; color: var(--muted); }
+
+  /* ── TOP KELUHAN ── */
+  .complaint-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; margin-bottom: 7px;
+    background: var(--surface2); border: 1px solid var(--border);
+  }
+  .complaint-rank { font-size: 16px; font-weight: 900; width: 26px; text-align: center; flex-shrink: 0; color: var(--neg); }
+  .complaint-text { flex: 1; font-size: 12px; line-height: 1.4; }
+  .complaint-count { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  /* ── RIWAYAT ── */
+  .history-card {
+    background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px; margin-bottom: 20px;
+  }
+  .history-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .history-clear-btn {
+    font-size: 11px; color: var(--neg); background: none; border: none; cursor: pointer; font-weight: 600;
+  }
+  .history-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 16px 0; }
+  .history-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: 8px; margin-bottom: 6px; border: 1px solid var(--border);
+    background: var(--surface2); cursor: pointer;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item-icon { font-size: 16px; flex-shrink: 0; }
+  .history-item-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .history-item-meta { font-size: 11px; color: var(--muted); }
+  .history-badges { display: flex; gap: 5px; }
+  .history-badge { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; }
+  .hb-pos { background: var(--pos-bg); color: var(--pos); }
+  .hb-neg { background: var(--neg-bg); color: var(--neg); }
+
+  /* ── EXPORT BTN ── */
+  .export-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .export-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 16px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .export-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+  /* CS CONFIG PANEL */
+  .cs-config-bar {
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: var(--radius); padding: 14px 20px;
+    display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .cs-config-bar label { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .cs-input {
+    border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 11px; font-size: 13px; outline: none; font-family: inherit;
+    width: 180px;
+  }
+  .cs-input:focus { border-color: var(--accent); }
+  .cs-config-title { font-size: 13px; font-weight: 700; color: #92400e; white-space: nowrap; }
+  .cs-config-icon { font-size: 18px; flex-shrink: 0; }
+  .notif-btn {
+    background: linear-gradient(90deg, #e91e8c, #ce93d8);
+    color: #fff; border: none;
+    padding: 7px 16px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(233,30,140,0.2);
+  }
+  .notif-btn:hover { opacity: 0.88; }
+  .notif-btn.granted { background: linear-gradient(90deg, #d81b60, #ad1457); }
+  .notif-status { font-size: 11px; color: var(--muted); }
+
+  /* WA BUTTON IN INSIGHT */
+  .wa-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #25d366; color: #fff; border: none;
+    padding: 5px 13px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; margin-top: 7px; text-decoration: none;
+    white-space: nowrap;
+  }
+  .wa-btn:hover { background: #1da851; }
+
+  /* TOAST NOTIFICATION */
+  .toast-wrap {
+    position: fixed; top: 70px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    background: #1f2328; color: #fff; padding: 12px 18px;
+    border-radius: 10px; font-size: 13px; max-width: 320px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    pointer-events: auto; display: flex; gap: 10px; align-items: flex-start;
+    animation: slideIn .25s ease;
+  }
+  .toast.toast-urgent { border-left: 4px solid var(--neg); }
+  .toast.toast-ok { border-left: 4px solid var(--pos); }
+  .toast-icon { font-size: 18px; flex-shrink: 0; }
+  .toast-body { flex: 1; line-height: 1.4; }
+  .toast-title { font-weight: 700; font-size: 13px; }
+  .toast-msg { font-size: 12px; color: #adb5bd; margin-top: 2px; }
+  .toast-close { background: none; border: none; color: #adb5bd; cursor: pointer; font-size: 16px; flex-shrink: 0; line-height: 1; }
+  @keyframes slideIn { from { opacity:0; transform: translateX(30px); } to { opacity:1; transform: translateX(0); } }
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+  </div>
+  <div>
+    <div class="header-title">CustomerLens</div>
+    <div class="header-sub">AI Agent · Analisis otomatis feedback pelanggan</div>
+  </div>
+  <button class="dark-toggle" id="dark-toggle-btn">🌙 Dark Mode</button>
+</header>
+
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div id="upload-section">
+    <div class="upload-card" id="drop-zone">
+      <input type="file" id="csv-file" accept=".csv,.txt" />
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="upload-title">Upload File CSV Feedback</div>
+      <div class="upload-hint">Drag & drop file CSV, atau klik tombol di bawah untuk memilih file</div>
+      <span class="upload-btn">Pilih File CSV</span>
+      <div class="upload-formats">Format: .csv &nbsp;·&nbsp; Encoding: UTF-8 &nbsp;·&nbsp; Max: 10.000 baris</div>
+    </div>
+    <div style="text-align:center">
+      <button class="sample-btn" id="demo-btn">⚡ Gunakan Data Demo (200 feedback)</button>
+    </div>
+    <div class="format-guide">
+      <strong>Kolom CSV yang dikenali secara otomatis:</strong><br/>
+      <code>feedback</code> / <code>review</code> / <code>comment</code> / <code>text</code> — teks feedback (wajib) &nbsp;|&nbsp;
+      <code>date</code> / <code>created_at</code> — tanggal &nbsp;|&nbsp;
+      <code>rating</code> / <code>score</code> — nilai bintang &nbsp;|&nbsp;
+      <code>name</code> / <code>customer</code> — nama pelanggan &nbsp;|&nbsp;
+      <code>category</code> / <code>product</code> — kategori
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="progress-wrap">
+    <div style="font-weight:700;font-size:15px" id="progress-title">Menganalisis feedback…</div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    <div class="progress-label" id="progress-label">Memuat data…</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <!-- CS CONFIG BAR -->
+    <div class="cs-config-bar">
+      <span class="cs-config-icon">👤</span>
+      <span class="cs-config-title">Konfigurasi CS Penanggung Jawab</span>
+      <label>Nama CS:</label>
+      <input class="cs-input" id="cs-name" type="text" placeholder="cth: Rina Dewi" />
+      <label>No. WhatsApp:</label>
+      <input class="cs-input" id="cs-phone" type="text" placeholder="cth: 628123456789" style="width:160px" />
+      <button class="notif-btn" id="notif-perm-btn">🔔 Aktifkan Notifikasi</button>
+      <span class="notif-status" id="notif-status">Notifikasi belum diaktifkan</span>
+    </div>
+
+    <!-- File bar -->
+    <div class="file-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <div>
+        <div class="file-bar-name" id="file-name-label">—</div>
+        <div class="file-bar-meta" id="file-meta-label">—</div>
+      </div>
+      <button class="file-bar-reset" id="reset-btn">↩ Upload File Baru</button>
+    </div>
+
+    <!-- EXPORT ROW -->
+    <div class="export-row">
+      <button class="export-btn" id="export-csv-btn">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV Hasil
+      </button>
+      <button class="export-btn" id="copy-summary-btn">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Salin Ringkasan
+      </button>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-total">
+        <div class="kpi-label">Total Feedback</div>
+        <div class="kpi-value" id="kpi-total">0</div>
+        <div class="kpi-sub" id="kpi-total-sub">—</div>
+      </div>
+      <div class="kpi-card kpi-pos">
+        <div class="kpi-label">Positif</div>
+        <div class="kpi-value" id="kpi-pos">0%</div>
+        <div class="kpi-sub" id="kpi-pos-sub">—</div>
+      </div>
+      <div class="kpi-card kpi-neg">
+        <div class="kpi-label">Negatif</div>
+        <div class="kpi-value" id="kpi-neg">0%</div>
+        <div class="kpi-sub" id="kpi-neg-sub">—</div>
+      </div>
+      <div class="kpi-card kpi-neu">
+        <div class="kpi-label">Rata-rata Rating</div>
+        <div class="kpi-value" id="kpi-rating">—</div>
+        <div class="kpi-sub" id="kpi-rating-sub">—</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Distribusi Sentimen</div>
+        <svg class="chart-svg" id="pie-chart" viewBox="0 0 280 200"></svg>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Tren Sentimen per Waktu</div>
+        <svg class="chart-svg" id="trend-chart" viewBox="0 0 360 180"></svg>
+      </div>
+    </div>
+
+    <!-- Themes + Word Cloud -->
+    <div class="themes-grid">
+      <div class="chart-card">
+        <div class="chart-title">Tema Utama Feedback</div>
+        <div id="theme-bars"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Kata Kunci Populer</div>
+        <div class="word-cloud" id="word-cloud"></div>
+      </div>
+    </div>
+
+    <!-- NPS + Top Keluhan row -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Skor NPS (Net Promoter Score)</div>
+        <div class="nps-gauge-wrap">
+          <div class="nps-value" id="nps-value">—</div>
+          <div class="nps-label" id="nps-label">Menunggu data…</div>
+          <div class="nps-bar-wrap"><div class="nps-bar-fill" id="nps-bar" style="width:0%"></div></div>
+          <div class="nps-desc" id="nps-desc">NPS = % Promoter − % Detractor (berdasarkan rating)</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🔴 Top 5 Keluhan Terbanyak</div>
+        <div id="top-complaints"></div>
+      </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="insights-card">
+      <div class="insights-title"><span>💡</span> Business Insights &amp; Notifikasi CS</div>
+      <div id="insights-list"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header-row">
+        <div class="chart-title" style="margin:0">Detail Feedback</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input class="table-search" id="search-input" type="text" placeholder="Cari teks feedback…" />
+          <div class="filter-pills">
+            <button class="filter-pill active-all" data-filter="all">Semua</button>
+            <button class="filter-pill" data-filter="positive">Positif</button>
+            <button class="filter-pill" data-filter="negative">Negatif</button>
+            <button class="filter-pill" data-filter="neutral">Netral</button>
+          </div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Feedback</th>
+              <th>Sentimen</th>
+              <th>Skor</th>
+              <th>Tema</th>
+              <th>Rating</th>
+              <th>Tanggal</th>
+            </tr>
+          </thead>
+          <tbody id="feedback-table-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+    <!-- Riwayat Analisis -->
+    <div class="history-card" id="history-section" style="display:none">
+      <div class="history-title">
+        <span>🕘 Riwayat Analisis</span>
+        <button class="history-clear-btn" id="history-clear-btn">Hapus Semua</button>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<footer class="footer">Made with IBM Bob</footer>
+
+<script>
+// ─────────────────────────────────────────
+//  SENTIMENT ENGINE
+// ─────────────────────────────────────────
+const POS_WORDS = [
+  'bagus','baik','memuaskan','puas','luar biasa','keren','mantap','hebat','sempurna',
+  'excellent','great','good','amazing','awesome','fantastic','wonderful','best','love',
+  'suka','senang','terima kasih','terimakasih','mudah','cepat','ramah','helpful',
+  'profesional','berkualitas','terbaik','recommended','rekomen','top','nice','clear',
+  'friendly','fast','quick','smooth','comfortable','happy','satisfied','thank','thanks',
+  'mudah digunakan','sangat baik','sangat puas','sangat membantu','memuaskan'
+];
+const NEG_WORDS = [
+  'buruk','jelek','kecewa','mengecewakan','parah','payah','gagal','error','rusak',
+  'bad','poor','terrible','horrible','worst','awful','hate','disappointed','annoying',
+  'lambat','lama','susah','sulit','mahal','tidak puas','tidak membantu','tidak ramah',
+  'masalah','kendala','problem','trouble','issue','broken','crash','fail','failed',
+  'slow','expensive','useless','waste','bother','frustrating','confusing','misleading',
+  'tidak bisa','tidak jalan','tidak berfungsi','tidak sesuai','tidak oke','tidak ok'
+];
+const NEGATION = ['tidak','bukan','jangan','ga','gak','nggak','tak','belum','no','not','never','without'];
+
+const THEMES = {
+  'Produk': ['produk','barang','item','kualitas','quality','material','bahan','spesifikasi','spec'],
+  'Pelayanan': ['pelayanan','layanan','service','cs','customer service','staf','staff','admin','petugas','respon','response'],
+  'Pengiriman': ['pengiriman','kirim','delivery','kurir','ekspedisi','paket','tiba','sampai','shipping','logistik'],
+  'Harga': ['harga','price','murah','mahal','nilai','value','cost','biaya','tarif','promo','diskon','discount'],
+  'Aplikasi': ['aplikasi','app','website','web','platform','ui','interface','fitur','feature','login','error'],
+  'Pembayaran': ['bayar','payment','transfer','refund','tagihan','invoice','billing','kasir'],
+  'Keterlambatan': ['terlambat','telat','delay','lambat','lama','slow','nunggu','tunggu'],
+  'Komunikasi': ['komunikasi','info','informasi','jelaskan','penjelasan','konfirmasi','notifikasi','update'],
+};
+
+function tokenize(text) {
+  return text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+}
+
+function analyzeSentiment(text) {
+  const tokens = tokenize(text);
+  let score = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const prev = tokens[i - 1] || '';
+    const negated = NEGATION.includes(prev);
+    if (POS_WORDS.some(w => t.includes(w) || (t + ' ' + (tokens[i+1]||'')).includes(w))) {
+      score += negated ? -1 : 1;
+    }
+    if (NEG_WORDS.some(w => t.includes(w) || (t + ' ' + (tokens[i+1]||'')).includes(w))) {
+      score += negated ? 1 : -1;
+    }
+  }
+  // also check bigrams in original text
+  const lc = text.toLowerCase();
+  POS_WORDS.forEach(w => { if (lc.includes(w)) score += 0.5; });
+  NEG_WORDS.forEach(w => { if (lc.includes(w)) score -= 0.5; });
+
+  const norm = Math.max(-1, Math.min(1, score / 3));
+  if (norm > 0.1) return { label: 'positive', score: norm };
+  if (norm < -0.1) return { label: 'negative', score: norm };
+  return { label: 'neutral', score: norm };
+}
+
+function extractThemes(text) {
+  const lc = text.toLowerCase();
+  const found = [];
+  for (const [theme, keywords] of Object.entries(THEMES)) {
+    if (keywords.some(k => lc.includes(k))) found.push(theme);
+  }
+  return found.length ? found : ['Umum'];
+}
+
+function extractTopWords(records) {
+  const STOPWORDS = new Set(['yang','dan','di','ke','dari','untuk','dengan','ini','itu','ada','tidak',
+    'saya','kami','kita','bisa','akan','sudah','juga','lebih','sangat','tapi','but','the','and',
+    'is','are','was','in','of','to','a','an','it','for','i','my','me','we','our','you','your',
+    'have','has','they','was','be','on','at','by','or','as','so','if','do','did','get']);
+  const freq = {};
+  records.forEach(r => {
+    tokenize(r.text).forEach(w => {
+      if (w.length > 3 && !STOPWORDS.has(w)) freq[w] = (freq[w] || 0) + 1;
+    });
+  });
+  return Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0, 30);
+}
+
+// ─────────────────────────────────────────
+//  CSV PARSER
+// ─────────────────────────────────────────
+function parseCSV(raw) {
+  const lines = raw.trim().split(/\r?\n/);
+  const header = lines[0].split(',').map(h => h.replace(/^"|"$/g,'').trim().toLowerCase());
+
+  const colIdx = (names) => { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; };
+  const textCol  = colIdx(['feedback','review','comment','text','message','ulasan','komentar','isi']);
+  const dateCol  = colIdx(['date','created_at','tanggal','waktu','time','timestamp']);
+  const ratingCol= colIdx(['rating','score','bintang','stars','nilai']);
+  const nameCol  = colIdx(['name','customer','pelanggan','nama','user']);
+  const catCol   = colIdx(['category','product','kategori','produk','type','tipe']);
+
+  if (textCol < 0) throw new Error('Kolom teks tidak ditemukan. Pastikan ada kolom: feedback / review / comment / text');
+
+  const records = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    const text = (cols[textCol] || '').replace(/^"|"$/g,'').trim();
+    if (!text) continue;
+    records.push({
+      id: i,
+      text,
+      date: dateCol >= 0 ? (cols[dateCol] || '').replace(/^"|"$/g,'').trim() : '',
+      rating: ratingCol >= 0 ? parseFloat(cols[ratingCol]) || null : null,
+      name: nameCol >= 0 ? (cols[nameCol] || '').replace(/^"|"$/g,'').trim() : '',
+      category: catCol >= 0 ? (cols[catCol] || '').replace(/^"|"$/g,'').trim() : '',
+    });
+  }
+  return records;
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ─────────────────────────────────────────
+//  DEMO DATA GENERATOR
+// ─────────────────────────────────────────
+function generateDemo() {
+  const positives = [
+    'Pelayanan sangat ramah dan cepat, saya sangat puas!','Produk berkualitas tinggi sesuai deskripsi, recommended banget',
+    'Pengiriman cepat, paket aman, terima kasih!','Aplikasi mudah digunakan dan fiturnya lengkap',
+    'Harga murah kualitas terjamin, mantap jiwa!','CS responsif dan sangat membantu, top banget',
+    'Barang tiba sehari setelah order, luar biasa','Sangat memuaskan, pasti beli lagi di sini',
+    'Keren banget produknya, sesuai ekspektasi saya','Pengalaman belanja yang menyenangkan, staf sangat profesional',
+    'Kualitas produk excellent, harga bersaing','Pengiriman tepat waktu, kondisi barang sempurna',
+    'Aplikasi smooth tidak ada bug, pengalaman belanja menyenangkan','Customer service sangat helpful dan fast response',
+    'Sangat bagus, melebihi ekspektasi saya!','Top! Suka banget sama pelayanannya',
+    'Barang bagus, sesuai foto, aman sampai tujuan','Great service, highly recommended!',
+    'Produk amazing kualitasnya, pasti repeat order','Wonderful experience, staf friendly dan profesional'
+  ];
+  const negatives = [
+    'Pengiriman sangat lama, hampir 2 minggu baru sampai','Produk tidak sesuai deskripsi, sangat kecewa',
+    'CS sulit dihubungi, respon lambat sekali','Aplikasi error terus, tidak bisa login sama sekali',
+    'Harga mahal tapi kualitas buruk, sangat mengecewakan','Barang rusak saat tiba, pengemasan parah',
+    'Refund susah banget diproses, sangat lambat','Masalah dengan pembayaran, tagihan tidak sesuai',
+    'Produk jelek, tidak berkualitas, mau komplain','Pelayanan mengecewakan, staf tidak ramah sama sekali',
+    'Paket hilang, tidak ada info dari kurir','Website down terus, tidak bisa akses',
+    'Banyak masalah dengan pesanan saya, sangat frustrating','Kualitas terrible, tidak worth it harganya',
+    'Sangat kecewa dengan pelayanan, tidak profesional','Barang tidak datang padahal sudah bayar',
+    'Customer service tidak membantu sama sekali','Aplikasi crash terus, bad experience',
+    'Harga naik tiba-tiba tanpa pemberitahuan','Produk broken saat dibuka, packaging buruk'
+  ];
+  const neutrals = [
+    'Produk standar, sesuai harga yang dibayar','Pengiriman cukup cepat, tidak ada masalah berarti',
+    'Pelayanan biasa saja, lumayan lah','Aplikasi ada beberapa bug minor tapi masih bisa digunakan',
+    'Harga agak mahal tapi kualitas cukup oke','Barang sampai, kondisi oke, tidak ada keluhan khusus',
+    'CS merespon tapi agak lama, bisa ditingkatkan','Produk sesuai deskripsi, tidak lebih tidak kurang',
+    'Pengalaman belanja cukup baik, bisa lebih baik lagi','Fitur aplikasi cukup lengkap walau perlu improvement',
+    'Standar saja, tidak terlalu istimewa','Bisa diterima, meski ada beberapa hal yang perlu diperbaiki',
+    'Rating 3 dari 5, cukup untuk kebutuhan sehari-hari','Lumayan, tapi ekspektasi saya lebih tinggi',
+    'Tidak ada masalah, tapi tidak ada yang spesial juga','Pengiriman agak telat tapi akhirnya sampai juga'
+  ];
+  const categories = ['Elektronik','Pakaian','Makanan','Kecantikan','Olahraga','Furniture'];
+  const names = ['Andi','Budi','Citra','Dewi','Eka','Fani','Gita','Hendra','Indah','Joko',
+                 'Kartika','Lina','Maya','Nina','Oki','Putri','Rudi','Sari','Tono','Umi'];
+
+  const rows = [['feedback','rating','date','name','category']];
+  const now = new Date();
+  for (let i = 0; i < 200; i++) {
+    const r = Math.random();
+    let text, rating;
+    if (r < 0.5) { text = positives[i % positives.length]; rating = Math.floor(Math.random()*2)+4; }
+    else if (r < 0.75) { text = negatives[i % negatives.length]; rating = Math.floor(Math.random()*2)+1; }
+    else { text = neutrals[i % neutrals.length]; rating = 3; }
+    const d = new Date(now); d.setDate(d.getDate() - Math.floor(Math.random()*90));
+    const dateStr = d.toISOString().split('T')[0];
+    const name = names[i % names.length];
+    const cat = categories[i % categories.length];
+    rows.push([`"${text}"`, rating, dateStr, name, cat]);
+  }
+  return rows.map(r => r.join(',')).join('\n');
+}
+
+// ─────────────────────────────────────────
+//  CHART RENDERERS (pure SVG)
+// ─────────────────────────────────────────
+function renderPieChart(svgEl, data) {
+  const total = data.reduce((s,d) => s + d.value, 0);
+  if (!total) return;
+  const cx = 88, cy = 100, r = 72;
+  let startAngle = -Math.PI / 2;
+  let svgHtml = '';
+
+  data.forEach(d => {
+    const angle = (d.value / total) * Math.PI * 2;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    svgHtml += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${d.color}" stroke="#fff" stroke-width="2"/>`;
+    startAngle = endAngle;
+  });
+
+  // legend — spasi lebih longgar, posisi lebih ke kanan & tengah vertikal
+  const legStartY = 44;
+  const legSpacing = 38;
+  data.forEach((d, i) => {
+    const pct = ((d.value / total) * 100).toFixed(1);
+    const y = legStartY + i * legSpacing;
+    svgHtml += `<rect x="176" y="${y}" width="13" height="13" rx="3" fill="${d.color}"/>`;
+    svgHtml += `<text x="195" y="${y + 11}" font-size="12" font-family="system-ui" fill="#1f2328">${d.label}</text>`;
+    svgHtml += `<text x="195" y="${y + 25}" font-size="11" font-family="system-ui" fill="#57606a" font-weight="600">${pct}%</text>`;
+  });
+
+  svgEl.innerHTML = svgHtml;
+}
+
+function renderTrendChart(svgEl, records) {
+  // group by month
+  const byMonth = {};
+  records.forEach(r => {
+    let key = 'Unknown';
+    if (r.date) {
+      const d = new Date(r.date);
+      if (!isNaN(d)) key = d.toISOString().slice(0,7);
+    }
+    if (!byMonth[key]) byMonth[key] = {positive:0,negative:0,neutral:0};
+    byMonth[key][r.sentiment.label]++;
+  });
+
+  const months = Object.keys(byMonth).filter(k=>k!=='Unknown').sort().slice(-6);
+  if (months.length < 2) {
+    svgEl.innerHTML = `<text x="180" y="90" text-anchor="middle" font-size="12" fill="#57606a">Data tanggal tidak cukup untuk tren</text>`;
+    return;
+  }
+
+  const W = 360, H = 180, padL = 40, padR = 20, padT = 20, padB = 40;
+  const cW = W - padL - padR, cH = H - padT - padB;
+  const maxVal = Math.max(...months.map(m => byMonth[m].positive + byMonth[m].negative + byMonth[m].neutral));
+
+  const xPts = months.map((m,i) => padL + (i/(months.length-1))*cW);
+  const yPos = months.map(m => padT + cH - (byMonth[m].positive/maxVal)*cH);
+  const yNeg = months.map(m => padT + cH - (byMonth[m].negative/maxVal)*cH);
+
+  const line = (pts, color) => {
+    const d = pts.map((y,i) => `${i===0?'M':'L'}${xPts[i]},${y}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  };
+  const dots = (pts, color) => pts.map((y,i) =>
+    `<circle cx="${xPts[i]}" cy="${y}" r="4" fill="${color}" stroke="#fff" stroke-width="2"/>`
+  ).join('');
+
+  // grid lines
+  let grid = '';
+  for (let v = 0; v <= 4; v++) {
+    const y = padT + (v/4)*cH;
+    grid += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+    grid += `<text x="${padL-6}" y="${y+4}" font-size="10" fill="#57606a" text-anchor="end">${Math.round(maxVal*(1-v/4))}</text>`;
+  }
+
+  // x labels
+  let xLabels = months.map((m,i) =>
+    `<text x="${xPts[i]}" y="${H-padB+18}" font-size="10" fill="#57606a" text-anchor="middle">${m.slice(5)}</text>`
+  ).join('');
+
+  // legend
+  const leg = `<rect x="${padL}" y="4" width="10" height="10" rx="2" fill="#16a34a"/>
+    <text x="${padL+14}" y="13" font-size="10" fill="#57606a">Positif</text>
+    <rect x="${padL+65}" y="4" width="10" height="10" rx="2" fill="#dc2626"/>
+    <text x="${padL+79}" y="13" font-size="10" fill="#57606a">Negatif</text>`;
+
+  svgEl.innerHTML = grid + line(yPos,'#16a34a') + line(yNeg,'#dc2626') +
+    dots(yPos,'#16a34a') + dots(yNeg,'#dc2626') + xLabels + leg;
+}
+
+function renderThemeBars(container, themeCounts, total) {
+  const sorted = Object.entries(themeCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  container.innerHTML = sorted.map(([theme, count]) => {
+    const pct = ((count/total)*100).toFixed(0);
+    return `<div class="theme-bar-item">
+      <span class="theme-bar-label">${theme}</span>
+      <div class="theme-bar-track"><div class="theme-bar-fill" style="width:${Math.min(100,(count/sorted[0][1])*100)}%"></div></div>
+      <span class="theme-bar-count">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderWordCloud(container, words) {
+  const sizes = ['1.3em','1.1em','0.95em','0.85em','0.78em'];
+  const colors = ['#3b82d4','#7c5cd8','#16a34a','#d97706','#dc2626'];
+  container.innerHTML = words.slice(0,24).map(([w, freq], i) => {
+    const sIdx = Math.min(Math.floor(i/5), sizes.length-1);
+    const cIdx = i % colors.length;
+    return `<span class="word-tag" style="font-size:${sizes[sIdx]};color:${colors[cIdx]}">${w} <sup>${freq}</sup></span>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────
+//  INSIGHT GENERATOR
+// ─────────────────────────────────────────
+function generateInsights(records, stats) {
+  const insights = [];
+  const { posCount, negCount, neuCount, total } = stats;
+  const negPct = (negCount/total*100).toFixed(1);
+  const posPct = (posCount/total*100).toFixed(1);
+
+  if (negPct > 40) {
+    insights.push({ type:'urgent', icon:'🚨',
+      title: `Tingkat sentimen negatif tinggi: ${negPct}%`,
+      body: 'Lebih dari 40% feedback bersifat negatif. Segera lakukan investigasi dan perbaikan layanan.' });
+  } else if (negPct > 20) {
+    insights.push({ type:'neutral', icon:'⚠️',
+      title: `Sentimen negatif perlu perhatian: ${negPct}%`,
+      body: 'Ada bagian layanan yang perlu diperbaiki. Prioritaskan keluhan yang paling banyak muncul.' });
+  }
+
+  if (posPct > 70) {
+    insights.push({ type:'positive', icon:'🎉',
+      title: `Performa luar biasa! ${posPct}% feedback positif`,
+      body: 'Pelanggan sangat puas dengan layanan Anda. Pertahankan dan dokumentasikan praktik terbaik ini.' });
+  } else if (posPct > 50) {
+    insights.push({ type:'positive', icon:'✅',
+      title: `Mayoritas pelanggan puas: ${posPct}%`,
+      body: 'Lebih dari separuh feedback positif. Tingkatkan terus untuk mencapai benchmark >70%.' });
+  }
+
+  // theme-based insights
+  const themeCounts = {};
+  records.forEach(r => r.themes.forEach(t => {
+    if (!themeCounts[t]) themeCounts[t] = { pos:0, neg:0, total:0 };
+    themeCounts[t].total++;
+    themeCounts[t][r.sentiment.label === 'positive' ? 'pos' : r.sentiment.label === 'negative' ? 'neg' : 'neu']++;
+  }));
+
+  const sorted = Object.entries(themeCounts).sort((a,b)=>b[1].total-a[1].total);
+  sorted.forEach(([theme, c]) => {
+    if (c.neg > c.total * 0.5 && c.total > 5) {
+      insights.push({ type:'urgent', icon:'🔴',
+        title: `Masalah di area "${theme}": ${c.neg} keluhan`,
+        body: `${Math.round(c.neg/c.total*100)}% feedback tentang ${theme} bersifat negatif. Prioritaskan perbaikan segera.` });
+    } else if (c.pos > c.total * 0.7 && c.total > 5) {
+      insights.push({ type:'positive', icon:'⭐',
+        title: `Kekuatan di area "${theme}": ${c.pos} feedback positif`,
+        body: `${Math.round(c.pos/c.total*100)}% pelanggan puas dengan ${theme}. Jadikan ini sebagai keunggulan kompetitif.` });
+    }
+  });
+
+  // rating insight
+  const ratings = records.filter(r=>r.rating).map(r=>r.rating);
+  if (ratings.length > 5) {
+    const avg = (ratings.reduce((s,v)=>s+v,0)/ratings.length).toFixed(2);
+    const type = avg >= 4 ? 'positive' : avg >= 3 ? 'neutral' : 'urgent';
+    const icon = avg >= 4 ? '⭐' : avg >= 3 ? '📊' : '📉';
+    insights.push({ type, icon,
+      title: `Rata-rata rating: ${avg} / 5`,
+      body: avg >= 4 ? 'Rating sangat baik. Pelanggan memberikan penilaian tinggi terhadap produk/layanan Anda.'
+           : avg >= 3 ? 'Rating cukup. Ada ruang perbaikan untuk meningkatkan kepuasan pelanggan.'
+           : 'Rating rendah memerlukan perhatian segera. Lakukan survei mendalam ke pelanggan.' });
+  }
+
+  // volume insight
+  insights.push({ type:'info', icon:'📈',
+    title: `${total} total feedback dianalisis secara otomatis`,
+    body: `AI berhasil menganalisis seluruh ${total} feedback tanpa review manual. Analisis mencakup sentimen, tema, dan kata kunci penting.` });
+
+  return insights.slice(0, 6);
+}
+
+// ─────────────────────────────────────────
+//  TABLE RENDERER
+// ─────────────────────────────────────────
+let allRecords = [];
+let filteredRecords = [];
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let activeFilter = 'all';
+let searchQuery = '';
+
+function renderTable() {
+  filteredRecords = allRecords.filter(r => {
+    const matchFilter = activeFilter === 'all' || r.sentiment.label === activeFilter;
+    const matchSearch = !searchQuery || r.text.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  const total = filteredRecords.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  currentPage = Math.min(currentPage, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredRecords.slice(start, start + PAGE_SIZE);
+
+  const tbody = document.getElementById('feedback-table-body');
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Tidak ada feedback ditemukan.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = page.map((r, i) => {
+      const sLabel = r.sentiment.label;
+      const badgeClass = sLabel === 'positive' ? 'badge-pos' : sLabel === 'negative' ? 'badge-neg' : 'badge-neu';
+      const badgeText = sLabel === 'positive' ? 'Positif' : sLabel === 'negative' ? 'Negatif' : 'Netral';
+      const scorePct = Math.round(Math.abs(r.sentiment.score) * 100);
+      const scoreColor = sLabel === 'positive' ? '#16a34a' : sLabel === 'negative' ? '#dc2626' : '#d97706';
+      const themes = r.themes.map(t => `<span class="theme-chip">${t}</span>`).join('');
+      const rating = r.rating ? '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5-Math.round(r.rating)) : '—';
+      const date = r.date ? r.date.slice(0,10) : '—';
+      return `<tr>
+        <td style="color:var(--muted)">${start+i+1}</td>
+        <td class="text-cell">${r.text.length > 100 ? r.text.slice(0,100)+'…' : r.text}</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><div class="score-bar"><div class="score-mini"><div class="score-mini-fill" style="width:${scorePct}%;background:${scoreColor}"></div></div><span style="font-size:11px;color:var(--muted)">${scorePct}%</span></div></td>
+        <td>${themes}</td>
+        <td style="font-size:13px;color:#d97706;white-space:nowrap">${rating}</td>
+        <td style="white-space:nowrap;color:var(--muted)">${date}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // pagination
+  const pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.innerHTML=''; return; }
+  let pagHtml = '';
+  if (currentPage > 1) pagHtml += `<button class="page-btn" data-page="${currentPage-1}">‹</button>`;
+  for (let p = Math.max(1,currentPage-2); p <= Math.min(totalPages,currentPage+2); p++) {
+    pagHtml += `<button class="page-btn${p===currentPage?' active':''}" data-page="${p}">${p}</button>`;
+  }
+  if (currentPage < totalPages) pagHtml += `<button class="page-btn" data-page="${currentPage+1}">›</button>`;
+  pagHtml += `<span class="page-info">${start+1}–${Math.min(start+PAGE_SIZE,total)} / ${total}</span>`;
+  pag.innerHTML = pagHtml;
+  pag.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', () => { currentPage = parseInt(btn.dataset.page); renderTable(); });
+  });
+}
+
+// ─────────────────────────────────────────
+//  MAIN ANALYSIS PIPELINE
+// ─────────────────────────────────────────
+async function runAnalysis(csvText, fileName) {
+  const progress = (pct, label) => {
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = label;
+  };
+
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'none';
+
+  try {
+    progress(10, 'Parsing CSV…');
+    await sleep(80);
+    const raw = parseCSV(csvText);
+    if (!raw.length) throw new Error('File CSV kosong atau tidak ada teks yang bisa dibaca.');
+
+    progress(30, `Menganalisis sentimen ${raw.length} feedback…`);
+    await sleep(100);
+
+    // Process in batches to keep UI responsive
+    const batchSize = 50;
+    const records = [];
+    for (let i = 0; i < raw.length; i += batchSize) {
+      const batch = raw.slice(i, i + batchSize);
+      batch.forEach(r => {
+        r.sentiment = analyzeSentiment(r.text);
+        r.themes = extractThemes(r.text);
+        records.push(r);
+      });
+      progress(30 + Math.round((i/raw.length)*40), `Menganalisis sentimen… ${Math.min(i+batchSize,raw.length)}/${raw.length}`);
+      await sleep(0);
+    }
+
+    progress(70, 'Mengekstrak tema dan kata kunci…');
+    await sleep(80);
+    const topWords = extractTopWords(records);
+
+    progress(85, 'Menghitung statistik…');
+    await sleep(60);
+    const posCount = records.filter(r=>r.sentiment.label==='positive').length;
+    const negCount = records.filter(r=>r.sentiment.label==='negative').length;
+    const neuCount = records.filter(r=>r.sentiment.label==='neutral').length;
+    const total = records.length;
+
+    const ratings = records.filter(r=>r.rating).map(r=>r.rating);
+    const avgRating = ratings.length ? (ratings.reduce((s,v)=>s+v,0)/ratings.length) : null;
+
+    const themeCounts = {};
+    records.forEach(r => r.themes.forEach(t => { themeCounts[t] = (themeCounts[t]||0)+1; }));
+
+    progress(95, 'Membuat insights bisnis…');
+    await sleep(80);
+    const stats = { posCount, negCount, neuCount, total };
+    const insights = generateInsights(records, stats);
+
+    progress(100, 'Selesai!');
+    await sleep(200);
+
+    // ─── RENDER DASHBOARD ───
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    document.getElementById('file-name-label').textContent = fileName || 'Data Feedback';
+    document.getElementById('file-meta-label').textContent = `${total} feedback · dianalisis ${new Date().toLocaleString('id')}`;
+
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-total-sub').textContent = `${posCount} pos · ${negCount} neg · ${neuCount} netral`;
+    document.getElementById('kpi-pos').textContent = (posCount/total*100).toFixed(1)+'%';
+    document.getElementById('kpi-pos-sub').textContent = `${posCount} feedback positif`;
+    document.getElementById('kpi-neg').textContent = (negCount/total*100).toFixed(1)+'%';
+    document.getElementById('kpi-neg-sub').textContent = `${negCount} feedback negatif`;
+    document.getElementById('kpi-rating').textContent = avgRating ? avgRating.toFixed(1)+'★' : 'N/A';
+    document.getElementById('kpi-rating-sub').textContent = avgRating ? `dari ${ratings.length} rating` : 'Data rating tidak ada';
+
+    renderPieChart(document.getElementById('pie-chart'), [
+      { label:'Positif', value: posCount, color:'#16a34a' },
+      { label:'Negatif', value: negCount, color:'#dc2626' },
+      { label:'Netral',  value: neuCount, color:'#d97706' },
+    ]);
+    renderTrendChart(document.getElementById('trend-chart'), records);
+    renderThemeBars(document.getElementById('theme-bars'), themeCounts, total);
+    renderWordCloud(document.getElementById('word-cloud'), topWords);
+
+    // insights + WA buttons for urgent
+    const insightList = document.getElementById('insights-list');
+    const currentStats = { posCount, negCount, neuCount, total };
+    const currentFileName = fileName;
+    insightList.innerHTML = insights.map(ins => {
+      const waBtn = (ins.type === 'urgent')
+        ? `<br><a class="wa-btn" id="wa-${ins.title.slice(0,10).replace(/\s/g,'_')}"
+             href="#" target="_blank">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.99 1C5.924 1 1 5.925 1 11.99 1 13.9 1.505 15.69 2.38 17.24L1 23l5.91-1.35A10.95 10.95 0 0 0 11.99 23C18.056 23 23 18.076 23 12.01 23 5.944 18.056 1 11.99 1zm0 20a8.966 8.966 0 0 1-4.591-1.26l-.328-.195-3.508.801.843-3.411-.214-.35A8.95 8.95 0 0 1 3 12.01C3 7.028 7.028 3 11.99 3 16.952 3 21 7.028 21 12.01 21 16.99 16.952 21 11.99 21z"/></svg>
+             Kirim ke CS via WhatsApp
+           </a>`
+        : '';
+      return `<div class="insight-item ${ins.type}">
+        <span class="insight-icon">${ins.icon}</span>
+        <div class="insight-text"><strong>${ins.title}</strong>${ins.body}${waBtn}</div>
+      </div>`;
+    }).join('');
+
+    // Attach WA href dynamically (needs phone from input)
+    insights.forEach(ins => {
+      if (ins.type !== 'urgent') return;
+      const id = 'wa-' + ins.title.slice(0,10).replace(/\s/g,'_');
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const phone = document.getElementById('cs-phone').value.trim().replace(/\D/g,'');
+        if (!phone) { alert('Isi nomor WhatsApp CS terlebih dahulu di panel konfigurasi.'); return; }
+        const msg = buildWAMessage(ins, currentStats, currentFileName);
+        window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+      });
+    });
+
+    // Fire browser notifications + toasts
+    fireUrgentNotifications(insights);
+
+    // NPS Score
+    renderNPS(records);
+
+    // Top Keluhan
+    renderTopComplaints(records);
+
+    // Save to history
+    saveToHistory({ fileName, total, posCount, negCount, avgRating, date: new Date().toISOString() });
+
+    // table
+    allRecords = records;
+    currentPage = 1;
+    activeFilter = 'all';
+    searchQuery = '';
+    document.getElementById('search-input').value = '';
+    document.querySelectorAll('.filter-pill').forEach(p => {
+      p.className = 'filter-pill' + (p.dataset.filter === 'all' ? ' active-all' : '');
+    });
+    renderTable();
+
+  } catch (err) {
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('upload-section').style.display = 'block';
+    alert('❌ Error: ' + err.message);
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─────────────────────────────────────────
+//  NPS SCORE
+// ─────────────────────────────────────────
+function renderNPS(records) {
+  const rated = records.filter(r => r.rating);
+  if (rated.length < 3) {
+    document.getElementById('nps-value').textContent = 'N/A';
+    document.getElementById('nps-label').textContent = 'Data rating tidak cukup';
+    document.getElementById('nps-desc').textContent = 'Butuh minimal 3 data rating untuk menghitung NPS';
+    return;
+  }
+  const promoters  = rated.filter(r => r.rating >= 4).length;
+  const detractors = rated.filter(r => r.rating <= 2).length;
+  const nps = Math.round(((promoters - detractors) / rated.length) * 100);
+  const el = document.getElementById('nps-value');
+  el.textContent = (nps > 0 ? '+' : '') + nps;
+  el.className = 'nps-value ' + (nps >= 30 ? 'great' : nps >= 0 ? 'ok' : 'poor');
+  const label = nps >= 50 ? 'Excellent 🏆' : nps >= 30 ? 'Sangat Baik ✅' : nps >= 0 ? 'Perlu Ditingkatkan ⚠️' : 'Kritis 🚨';
+  document.getElementById('nps-label').textContent = label;
+  const pct = Math.max(0, Math.min(100, (nps + 100) / 2));
+  const barColor = nps >= 30 ? '#16a34a' : nps >= 0 ? '#d97706' : '#dc2626';
+  const bar = document.getElementById('nps-bar');
+  bar.style.width = pct + '%';
+  bar.style.background = barColor;
+  document.getElementById('nps-desc').textContent =
+    `Promoter: ${promoters} | Pasif: ${rated.length-promoters-detractors} | Detractor: ${detractors} (dari ${rated.length} rating)`;
+}
+
+// ─────────────────────────────────────────
+//  TOP 5 KELUHAN
+// ─────────────────────────────────────────
+function renderTopComplaints(records) {
+  const neg = records.filter(r => r.sentiment.label === 'negative');
+  const container = document.getElementById('top-complaints');
+  if (!neg.length) {
+    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Tidak ada feedback negatif 🎉</div>';
+    return;
+  }
+  // Count keyword frequency in negative feedbacks
+  const freq = {};
+  const STOP = new Set(['yang','dan','di','ke','dari','untuk','dengan','ini','itu','ada','saya','kami',
+    'kita','bisa','akan','sudah','juga','lebih','tapi','but','the','and','is','are','was','in',
+    'of','to','a','an','it','for','i','my','me','we']);
+  neg.forEach(r => {
+    tokenize(r.text).forEach(w => {
+      if (w.length > 4 && !STOP.has(w)) freq[w] = (freq[w] || 0) + 1;
+    });
+  });
+  // Also count exact short phrases
+  const phraseFreq = {};
+  neg.forEach(r => {
+    const lc = r.text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+    NEG_WORDS.forEach(w => { if (lc.includes(w)) phraseFreq[w] = (phraseFreq[w]||0) + 1; });
+  });
+  const combined = [...Object.entries(phraseFreq)].sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (!combined.length) {
+    const topWords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    container.innerHTML = topWords.map(([w,c],i) =>
+      `<div class="complaint-item"><span class="complaint-rank">#${i+1}</span><span class="complaint-text">"${w}"</span><span class="complaint-count">${c}x</span></div>`
+    ).join('');
+    return;
+  }
+  const ranks = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  container.innerHTML = combined.map(([w,c],i) =>
+    `<div class="complaint-item">
+      <span class="complaint-rank">${ranks[i]||'#'+(i+1)}</span>
+      <span class="complaint-text">${w}</span>
+      <span class="complaint-count">${c} feedback</span>
+    </div>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────
+//  EXPORT CSV
+// ─────────────────────────────────────────
+function exportCSV() {
+  if (!allRecords.length) return;
+  const header = ['#','Feedback','Sentimen','Skor','Tema','Rating','Tanggal'];
+  const rows = allRecords.map((r, i) => [
+    i+1,
+    `"${r.text.replace(/"/g,'""')}"`,
+    r.sentiment.label === 'positive' ? 'Positif' : r.sentiment.label === 'negative' ? 'Negatif' : 'Netral',
+    Math.round(Math.abs(r.sentiment.score)*100)+'%',
+    `"${r.themes.join(', ')}"`,
+    r.rating || '',
+    r.date || ''
+  ]);
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'feedback_analisis.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥', 'Export berhasil!', `${allRecords.length} baris disimpan ke feedback_analisis.csv`, 'ok', 4000);
+}
+
+// ─────────────────────────────────────────
+//  SALIN RINGKASAN
+// ─────────────────────────────────────────
+function copySummary() {
+  if (!allRecords.length) return;
+  const total = allRecords.length;
+  const pos = allRecords.filter(r=>r.sentiment.label==='positive').length;
+  const neg = allRecords.filter(r=>r.sentiment.label==='negative').length;
+  const neu = total - pos - neg;
+  const ratings = allRecords.filter(r=>r.rating).map(r=>r.rating);
+  const avgR = ratings.length ? (ratings.reduce((s,v)=>s+v,0)/ratings.length).toFixed(1) : 'N/A';
+  const fileName = document.getElementById('file-name-label').textContent;
+  const text = `📊 RINGKASAN ANALISIS FEEDBACK\n` +
+    `File: ${fileName}\n` +
+    `Tanggal: ${new Date().toLocaleString('id')}\n\n` +
+    `Total Feedback  : ${total}\n` +
+    `✅ Positif       : ${pos} (${(pos/total*100).toFixed(1)}%)\n` +
+    `❌ Negatif       : ${neg} (${(neg/total*100).toFixed(1)}%)\n` +
+    `➡️  Netral        : ${neu} (${(neu/total*100).toFixed(1)}%)\n` +
+    `⭐ Avg Rating    : ${avgR}/5\n\n` +
+    `Dibuat otomatis oleh Customer Feedback Sentiment Analyzer`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('📋', 'Ringkasan tersalin!', 'Tempel di mana saja dengan Ctrl+V', 'ok', 3000);
+  }).catch(() => { alert('Gagal menyalin. Coba lagi.'); });
+}
+
+// ─────────────────────────────────────────
+//  RIWAYAT ANALISIS (localStorage)
+// ─────────────────────────────────────────
+const HISTORY_KEY = 'cfa_history';
+
+function saveToHistory(entry) {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) {}
+  history.unshift(entry);
+  if (history.length > 10) history = history.slice(0, 10);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch(e) {}
+  const section = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  if (!history.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = history.map((h, i) => {
+    const d = new Date(h.date).toLocaleString('id');
+    const posPct = h.total ? (h.posCount/h.total*100).toFixed(0) : 0;
+    const negPct = h.total ? (h.negCount/h.total*100).toFixed(0) : 0;
+    return `<div class="history-item" data-idx="${i}">
+      <span class="history-item-icon">📁</span>
+      <div style="flex:1">
+        <div class="history-item-name">${h.fileName}</div>
+        <div class="history-item-meta">${d} · ${h.total} feedback</div>
+      </div>
+      <div class="history-badges">
+        <span class="history-badge hb-pos">✅ ${posPct}%</span>
+        <span class="history-badge hb-neg">❌ ${negPct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+// ─────────────────────────────────────────
+//  TOAST SYSTEM
+// ─────────────────────────────────────────
+function showToast(icon, title, msg, type = 'urgent', duration = 6000) {
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span class="toast-icon">${icon}</span>
+    <div class="toast-body"><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>
+    <button class="toast-close" title="Tutup">✕</button>`;
+  t.querySelector('.toast-close').addEventListener('click', () => t.remove());
+  wrap.appendChild(t);
+  setTimeout(() => { if (t.parentNode) t.remove(); }, duration);
+}
+
+// ─────────────────────────────────────────
+//  BROWSER NOTIFICATIONS
+// ─────────────────────────────────────────
+function updateNotifStatus() {
+  const btn = document.getElementById('notif-perm-btn');
+  const status = document.getElementById('notif-status');
+  if (!('Notification' in window)) {
+    status.textContent = 'Browser tidak mendukung notifikasi';
+    btn.style.display = 'none';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.textContent = '✅ Notifikasi Aktif';
+    btn.classList.add('granted');
+    status.textContent = 'Notifikasi browser sudah aktif';
+  } else if (Notification.permission === 'denied') {
+    btn.textContent = '🚫 Akses Ditolak';
+    btn.style.opacity = '0.5';
+    status.textContent = 'Izin notifikasi ditolak — aktifkan di pengaturan browser';
+  } else {
+    btn.textContent = '🔔 Aktifkan Notifikasi';
+    btn.classList.remove('granted');
+    status.textContent = 'Klik tombol untuk mengaktifkan notifikasi HP/desktop';
+  }
+}
+
+function sendBrowserNotif(title, body, icon = '🔔') {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">' + icon + '</text></svg>' });
+  } catch(e) { /* silently ignore if blocked */ }
+}
+
+function fireUrgentNotifications(insights) {
+  const csName = document.getElementById('cs-name').value.trim() || 'Tim CS';
+  const urgents = insights.filter(i => i.type === 'urgent');
+  if (!urgents.length) {
+    sendBrowserNotif('✅ Analisis Selesai', `Hai ${csName}! Tidak ada keluhan kritis saat ini.`);
+    showToast('✅', 'Analisis Selesai', `Hai ${csName}! Tidak ada keluhan kritis saat ini.`, 'ok');
+    return;
+  }
+  // Fire browser notif for first urgent
+  sendBrowserNotif(`🚨 Perhatian ${csName}!`, urgents[0].title + ' — ' + urgents[0].body);
+  // Show toast for each urgent
+  urgents.forEach((ins, idx) => {
+    setTimeout(() => showToast(ins.icon, ins.title, `Tindakan diperlukan, ${csName}!`, 'urgent', 8000), idx * 600);
+  });
+}
+
+// ─────────────────────────────────────────
+//  WHATSAPP MESSAGE BUILDER
+// ─────────────────────────────────────────
+function buildWAMessage(ins, stats, fileName) {
+  const csName = document.getElementById('cs-name').value.trim() || 'Tim CS';
+  const now = new Date().toLocaleString('id');
+  const msg = `🚨 *ALERT FEEDBACK PELANGGAN*\n\nHai ${csName},\n\n` +
+    `📁 File: ${fileName || 'Data Feedback'}\n` +
+    `📅 Waktu: ${now}\n\n` +
+    `⚠️ *${ins.title}*\n${ins.body}\n\n` +
+    `📊 Ringkasan:\n` +
+    `• Total feedback: ${stats.total}\n` +
+    `• Positif: ${(stats.posCount/stats.total*100).toFixed(1)}%\n` +
+    `• Negatif: ${(stats.negCount/stats.total*100).toFixed(1)}%\n\n` +
+    `Mohon segera ditindaklanjuti. Terima kasih!`;
+  return encodeURIComponent(msg);
+}
+
+// ─────────────────────────────────────────
+//  EVENT BINDINGS
+// ─────────────────────────────────────────
+document.getElementById('csv-file').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => runAnalysis(ev.target.result, file.name);
+  reader.readAsText(file, 'UTF-8');
+});
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => runAnalysis(ev.target.result, file.name);
+  reader.readAsText(file, 'UTF-8');
+});
+
+document.getElementById('demo-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  runAnalysis(generateDemo(), 'demo_feedback_200.csv');
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('upload-section').style.display = 'block';
+  document.getElementById('csv-file').value = '';
+  allRecords = [];
+});
+
+// filter pills
+document.querySelectorAll('.filter-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    activeFilter = pill.dataset.filter;
+    currentPage = 1;
+    const labelMap = { all:'active-all', positive:'active-pos', negative:'active-neg', neutral:'active-neu' };
+    document.querySelectorAll('.filter-pill').forEach(p => {
+      p.className = 'filter-pill' + (p.dataset.filter === activeFilter ? ' '+labelMap[activeFilter] : '');
+    });
+    renderTable();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  currentPage = 1;
+  renderTable();
+});
+
+// Notif permission button
+document.getElementById('notif-perm-btn').addEventListener('click', () => {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(updateNotifStatus);
+});
+
+// Dark mode toggle
+const htmlRoot = document.getElementById('html-root');
+const darkBtn = document.getElementById('dark-toggle-btn');
+function applyDark(on) {
+  if (on) { htmlRoot.classList.add('dark'); darkBtn.textContent = '☀️ Light Mode'; }
+  else    { htmlRoot.classList.remove('dark'); darkBtn.textContent = '🌙 Dark Mode'; }
+  localStorage.setItem('cfa_dark', on ? '1' : '0');
+}
+darkBtn.addEventListener('click', () => applyDark(!htmlRoot.classList.contains('dark')));
+if (localStorage.getItem('cfa_dark') === '1') applyDark(true);
+
+// Export & Copy buttons
+document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
+document.getElementById('copy-summary-btn').addEventListener('click', copySummary);
+
+// History clear
+document.getElementById('history-clear-btn').addEventListener('click', () => {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+});
+
+// Init notif status & history on load
+updateNotifStatus();
+renderHistory();
+</script>
+</body>
+</html>
